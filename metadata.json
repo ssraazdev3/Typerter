@@ -1,0 +1,6 @@
+{
+  "name": "Typerter",
+  "description": "Tactile typewriter notes app with mechanical keyboard audio, adjustable haptics, illuminated focus mode, cloud sync, and Markdown/PDF/DOCX export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

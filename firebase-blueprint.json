@@ -1,0 +1,132 @@
+{
+  "entities": {
+    "Note": {
+      "title": "Note",
+      "description": "A tactile typewriter note document synced across devices with typography preferences and progress metadata.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the note owner."
+        },
+        "title": {
+          "type": "string",
+          "description": "Note title."
+        },
+        "content": {
+          "type": "string",
+          "description": "Full text content of the note."
+        },
+        "wordCount": {
+          "type": "integer",
+          "description": "Number of words in the note."
+        },
+        "charCount": {
+          "type": "integer",
+          "description": "Number of characters in the note."
+        },
+        "wordGoal": {
+          "type": "integer",
+          "description": "Target word goal for the note."
+        },
+        "fontId": {
+          "type": "string",
+          "description": "Selected typewriter or editorial font identifier.",
+          "enum": [
+            "special_elite",
+            "courier_prime",
+            "ibm_plex_mono",
+            "space_mono",
+            "newsreader",
+            "inter"
+          ]
+        },
+        "pinned": {
+          "type": "boolean",
+          "description": "Whether the note is pinned at the top of the folio."
+        },
+        "archived": {
+          "type": "boolean",
+          "description": "Whether the note is archived."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation (submitted via FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last modification (submitted via FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "content",
+        "wordCount",
+        "charCount",
+        "wordGoal",
+        "fontId",
+        "pinned",
+        "archived",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "WritingSession": {
+      "title": "WritingSession",
+      "description": "Completed writing session telemetry record for tracking writing statistics across devices.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated Firebase UID of the writer."
+        },
+        "noteId": {
+          "type": "string",
+          "description": "Identifier of the note edited during the session."
+        },
+        "wordsWritten": {
+          "type": "integer",
+          "description": "Net words written during this session."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "description": "Elapsed active writing time in seconds."
+        },
+        "wpm": {
+          "type": "integer",
+          "description": "Average words per minute achieved during the session."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when session was recorded (submitted via FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "noteId",
+        "wordsWritten",
+        "durationSeconds",
+        "wpm",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/notes/{noteId}": {
+      "schema": {
+        "$ref": "#/entities/Note"
+      },
+      "description": "User-owned typewriter notes subcollection."
+    },
+    "/users/{userId}/writing_sessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/WritingSession"
+      },
+      "description": "User-owned writing session statistics subcollection."
+    }
+  }
+}

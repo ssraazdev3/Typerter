@@ -1,0 +1,129 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidFontId(fontId) {
+      return fontId is string && fontId in [
+        'special_elite',
+        'courier_prime',
+        'ibm_plex_mono',
+        'space_mono',
+        'newsreader',
+        'inter'
+      ];
+    }
+
+    function isValidNote(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             data.title is string &&
+             data.title.size() <= 200 &&
+             data.content is string &&
+             data.content.size() <= 500000 &&
+             data.wordCount is int &&
+             data.wordCount >= 0 &&
+             data.wordCount <= 200000 &&
+             data.charCount is int &&
+             data.charCount >= 0 &&
+             data.charCount <= 1000000 &&
+             data.wordGoal is int &&
+             data.wordGoal >= 0 &&
+             data.wordGoal <= 200000 &&
+             isValidFontId(data.fontId) &&
+             data.pinned is bool &&
+             data.archived is bool &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time &&
+             data.updatedAt is timestamp &&
+             data.updatedAt <= request.time;
+    }
+
+    function isValidWritingSession(data, userId) {
+      return data.userId is string &&
+             data.userId == userId &&
+             isValidId(data.noteId) &&
+             data.wordsWritten is int &&
+             data.wordsWritten >= 0 &&
+             data.wordsWritten <= 200000 &&
+             data.durationSeconds is int &&
+             data.durationSeconds >= 0 &&
+             data.durationSeconds <= 86400 &&
+             data.wpm is int &&
+             data.wpm >= 0 &&
+             data.wpm <= 400 &&
+             data.createdAt is timestamp &&
+             data.createdAt <= request.time;
+    }
+
+    match /users/{userId}/notes/{noteId} {
+      allow get: if isOwner(userId) && isValidId(noteId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(noteId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'title', 'content', 'wordCount', 'charCount',
+                         'wordGoal', 'fontId', 'pinned', 'archived', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'title', 'content', 'wordCount', 'charCount',
+                         'wordGoal', 'fontId', 'pinned', 'archived', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidNote(incoming(), userId);
+
+      allow update: if isOwner(userId) &&
+                       isValidId(noteId) &&
+                       isValidNote(incoming(), userId) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'title', 'content', 'wordCount', 'charCount',
+                         'wordGoal', 'fontId', 'pinned', 'archived', 'updatedAt'
+                       ]);
+
+      allow delete: if isOwner(userId) && isValidId(noteId);
+    }
+
+    match /users/{userId}/writing_sessions/{sessionId} {
+      allow get: if isOwner(userId) && isValidId(sessionId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) &&
+                       isValidId(sessionId) &&
+                       incoming().keys().hasAll([
+                         'userId', 'noteId', 'wordsWritten', 'durationSeconds', 'wpm', 'createdAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'noteId', 'wordsWritten', 'durationSeconds', 'wpm', 'createdAt'
+                       ]) &&
+                       isValidWritingSession(incoming(), userId);
+
+      allow update: if false;
+      allow delete: if isOwner(userId) && isValidId(sessionId);
+    }
+  }
+}
